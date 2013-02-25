@@ -3,8 +3,12 @@ package main
 import (
     "encoding/xml"
     "fmt"
-    //"os"
+    "os"
+    "io"
     "io/ioutil"
+    "path"
+    "archive/zip"
+    "log"
 )
 
 type Worker struct {
@@ -32,9 +36,14 @@ func ParseSharedStrings(content []byte) []string {
 }
 
 func ParseSheet(content []byte, strings []string) []Worker {
+    type Col struct {
+        Val int `xml:"v"`
+        Type string `xml:"t,attr"`
+    }
+
     type Row struct {
         Num int `xml:"r,attr"`
-        Cols []int `xml:"c>v"`
+        Cols []Col `xml:"c"`
     }
 
     type Result struct {
@@ -50,14 +59,61 @@ func ParseSheet(content []byte, strings []string) []Worker {
     for _, row := range v.Rows {
         fmt.Printf("%d:", row.Num)
         for _, col := range row.Cols {
-            fmt.Printf("'%v' ", strings[col]);
+            if col.Type == "s" {
+                fmt.Printf("'%v' ", strings[col.Val]);
+            } else {
+                fmt.Printf("%d ", col.Val);
+            }
         }
         fmt.Printf("\n")
     }
     return nil;
 }
 
+func Unpack(filename string, prefix string) {
+    // Open a zip archive for reading.
+    os.RemoveAll(prefix)
+    r, err := zip.OpenReader(filename)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer r.Close()
+
+    flist, lerr := os.Create(prefix+".list")
+    if lerr != nil {
+        log.Fatal(lerr)
+    }
+    defer flist.Close()
+
+    // Iterate through the files in the archive,
+    // printing some of their contents.
+    for _, f := range r.File {
+        fmt.Fprintf(flist, "%s\n", f.Name)
+        err := os.MkdirAll(path.Dir(prefix + "/" + f.Name), 0755)
+        if err != nil {
+            log.Fatal(err)
+        }
+        rc, err := f.Open()
+        if err != nil {
+            log.Fatal(err)
+        }
+        dstf, err := os.Create(prefix + "/" + f.Name)
+        if err!= nil {
+            log.Fatal(err)
+        }
+        defer dstf.Close()
+        _, err = io.Copy(dstf, rc)
+        if err != nil {
+            log.Fatal(err)
+        }
+        rc.Close()
+        //fmt.Println()
+    }
+}
+
+
 func main() {
+    Unpack("form.xlsx", "form");
     sst_path := "form/xl/sharedStrings.xml";
     content, err := ioutil.ReadFile(sst_path);
     if err != nil {
@@ -75,4 +131,5 @@ func main() {
     }
     workers := ParseSheet(content, strings);
     fmt.Printf("%+v", workers);
+    Unpack("blank.docx", "blank")
 }
