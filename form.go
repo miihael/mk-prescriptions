@@ -230,8 +230,12 @@ func OutputPrp(template []byte, ps ... Prescription) {
 }
 
 func main() {
-    Unpack("form.xlsx", "form");
-    sst_path := "form/xl/sharedStrings.xml";
+    if len(os.Args)<2 {
+        fmt.Printf("usage: %s input_form.xlsx\n", os.Args[0])
+        return
+    }
+    Unpack(os.Args[1], "iform")
+    sst_path := "iform/xl/sharedStrings.xml";
     content, err := ioutil.ReadFile(sst_path);
     if err != nil {
         fmt.Printf("Error opening file %s: %s\n", sst_path, err);
@@ -240,7 +244,7 @@ func main() {
     //fmt.Printf("%s\n\n", content);
     strings := ParseSharedStrings(content);
 
-    sh_path := "form/xl/worksheets/sheet1.xml"
+    sh_path := "iform/xl/worksheets/sheet1.xml"
     content, err = ioutil.ReadFile(sh_path);
     if err != nil { log.Fatal(err) }
     prps := ParseSheet(content, strings);
