@@ -194,7 +194,7 @@ func MakeArgs(p []Cell, fchar string) []string {
     for i, cell := range p {
         args[i*2] = fmt.Sprintf("%s%02d%s", fchar, i+1, fchar)
         if cell.N > 0 {
-            if cell.N > 30000 &&  cell.N < 42000 {
+            if cell.N > 30000 &&  cell.N < 44000 {
                 dt, day, mon, y := MakeDate(cell.N)
                 args[i*2+1] = dt
                 args = append(args, []string{fmt.Sprintf("%s%02d@%s", fchar, i+1, fchar), strconv.Itoa(day)}...)
